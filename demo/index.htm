@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Mire</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="An exaustive color manipulation library in Vanilla JS.">
+    <meta name="author" content="3ffy - Aurélien GY">
+
+    <!-- The styles -->
+    <!-- <link href="demo.css" rel="stylesheet"> -->
+
+    <!-- The HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <!-- <script src="../asset/jquery.md5.min.js"></script> -->
+    <script src="../mire.js"></script>
+
+    <script>
+
+        var hexRed = new mire.colorHEX('ff0000');
+        var hexGreen = new mire.colorHEX(0x00ff00);
+        var rgbaRed = new mire.colorRGBA(255, 0, 0, 0);
+        var rgbGreen = new mire.colorRGB(0, 255, 0);
+        var nameRed = new mire.colorName('red');
+
+        console.log('hexRed', hexRed.getVerbose());
+        console.log('hexGreen', hexGreen.getVerbose());
+        console.log('rgbaRed', rgbaRed.getVerbose());
+        console.log('rgbGreen', rgbGreen.getVerbose());
+        console.log('nameRed', nameRed.getVerbose());
+
+    </script>
+
+  </head>
+
+  <body>
+  
+    (get a look to the console...)  
+
+  </body>
+</html>
