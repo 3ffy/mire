@@ -27,9 +27,11 @@
         var rgbGreen = new mire.colorRGB(0, 255, 0);
         var nameRed = new mire.colorName('red');
 
-        console.log('hexRed', hexRed.getVerbose());
+ rgbaRed._toHSL();
+
+        // console.log('hexRed', hexRed.getVerbose(), hexRed.getComplementary(), this);
         console.log('hexGreen', hexGreen.getVerbose());
-        console.log('rgbaRed', rgbaRed.getVerbose());
+        console.log('rgbaRed', rgbaRed.getVerbose(), rgbaRed, rgbaRed.getComplementary());
         console.log('rgbGreen', rgbGreen.getVerbose());
         console.log('nameRed', nameRed.getVerbose());
 

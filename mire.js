@@ -53,7 +53,8 @@ mire.color = function(opacity) {
     this._rgb = undefined;
     this._hsl = undefined;
     this._hsb = undefined;
-    this._cmyk = undefined;
+    this._cmy = undefined;
+    this._k = undefined;
     this._alpha = (typeof opacity == 'undefined') ? 1 : opacity;
 };
 
@@ -75,7 +76,7 @@ mire.color.prototype.getRGBA = function(opacity) {
     if (this._rgb === undefined) {
         this._toRGB();
     }
-    if (typeof opacity != number) {
+    if (typeof opacity != 'number') {
         opacity = (this._alpha === undefined) ? 1 : this._alpha;
     }
     return new mire.colorRGB(this._rgb.r, this._rgb.g, this._rgb.b, opacity);
@@ -105,7 +106,60 @@ mire.color.prototype.getHSB = function() {
     return new mire.colorHSB(this._hsb.h, this._hsb.s, this._hsb.b);
 };
 
-mire.colorRGBA.prototype.toHEX = function() {
+mire.color.prototype.getCMY = function() {
+    if (this._cmy === undefined) {
+        this._toCMY();
+    }
+    return new mire.colorCMY(this._cmy.c, this._cmy.m, this._cmy.y);
+};
+
+/**
+ * attention avertir l'utilisateur qu'il s'agit d'une approx grossière (il faut ce baser sur des fichiers icc)
+ *
+ * @return {[type]} [description]
+ */
+mire.color.prototype.getCMYK = function() {
+    if (this._cmy === undefined) {
+        this._toCMY();
+    }
+    var k = (this._k === undefined) ? Math.max(c, m, y) : this._k;
+    c = c - k;
+    m = m - k;
+    y = y - k;
+    return new mire.colorCMYK(c, m, y, k);
+};
+
+mire.color.prototype._hardTypedResult = function(context, color) {
+    if (context instanceof mire.colorHEX) {
+        return color.getHEX();
+    } else if (context instanceof mire.colorRGB) {
+        return color.getRGB();
+    } else if (context instanceof mire.colorRGBA) {
+        return color.getRGBA();
+    } else if (context instanceof mire.colorHSL) {
+        return color.getHSL();
+    } else if (context instanceof mire.colorHSLA) {
+        return color.getHSLA();
+    } else if (context instanceof mire.colorHSB) {
+        return color.getHSB();
+    } else if (context instanceof mire.colorCMYK) {
+        return color.getCMYK();
+    } else if (context instanceof mire.colorCMY) {
+        return color.getCMY();
+    }
+    return undefined;
+};
+
+mire.color.prototype.getComplementary = function() {
+    if (this._hsl === undefined) {
+        this._toHSL;
+    }
+    var h = Math.abs(this._hsl.h - 360);
+    var complementary = new mire.colorHSLA(h, this._hsl.s, this._hsl.l, this._alpha);
+    return this._hardTypedResult(this, complementary);
+};
+
+mire.color.prototype._toHEX = function() {
     if (this._rgb === undefined) {
         this._toRGB();
     }
@@ -148,7 +202,14 @@ mire.colorRGBA.prototype.getVerbose = function(simplifyToRGB, useExtraSpaces, us
     return mire._getVerboseRGBRGBA(this._rgb.r, this._rgb.g, this._rgb.b, this._alpha, simplifyToRGB, useExtraSpaces, usePercentage);
 };
 
-mire.colorRGBA.prototype.toHSL = function() {
+mire.colorRGBA.prototype._toCMY = function() {
+    this._cmy = {};
+    this._cmy.c = 1 - this._rgb.r;
+    this._cmy.m = 1 - this._rgb.g;
+    this._cmy.y = 1 - this._rgb.b;
+};
+
+mire.colorRGBA.prototype._toHSL = function() {
     //normalize the values
     var r = this._rgb.r / 255;
     var g = this._rgb.g / 255;
@@ -162,7 +223,7 @@ mire.colorRGBA.prototype.toHSL = function() {
         h = s = 0;
     } else {
         var d = max - min;
-        s = (l > 0.5 ? ) d / (2 - max - min): d / (max + min);
+        s = (l > 0.5) ? d / (2 - max - min) : d / (max + min);
         switch (max) {
             case r:
                 h = (g - b) / d + (g < b ? 6 : 0);
@@ -182,7 +243,7 @@ mire.colorRGBA.prototype.toHSL = function() {
     this._hsl.l = l;
 };
 
-mire.colorRGBA.prototype.toHSB = function() {
+mire.colorRGBA.prototype._toHSB = function() {
     //normalize the values
     var r = this._rgb.r / 255;
     var g = this._rgb.g / 255;
@@ -322,6 +383,7 @@ mire.colorHSLA = function(hue, saturation, lightness, opacity) {
 mire.colorHSLA.prototype = new mire.color();
 mire.colorHSLA.prototype.constructor = mire.colorHSLA;
 
+//FIXME, ne semble pas filer la bonne valeur
 mire.colorHSLA.prototype._toRGB = function() {
     var r, g, b;
     //detect if achromatic
@@ -340,7 +402,11 @@ mire.colorHSLA.prototype._toRGB = function() {
     this._rgb.b = Math.round(b * 255);
 };
 
-mire.colorHSL.prototype.toHSB = function(){
+mire.colorHSLA.prototype._toHSB = function() {
+    //TODO
+};
+
+mire.colorHSLA.prototype._toCMY = function() {
     //TODO
 };
 
@@ -379,22 +445,32 @@ mire.colorHSB.prototype._toRGB = function() {
         case 0:
             r = this._hsb.b;
             g = t;
-             b = p;
+            b = p;
             break;
         case 1:
-            r = q; g = this._hsb.b; b = p;
+            r = q;
+            g = this._hsb.b;
+            b = p;
             break;
         case 2:
-            r = p; g = this._hsb.b; b = t;
+            r = p;
+            g = this._hsb.b;
+            b = t;
             break;
         case 3:
-            r = p; g = q; b = this._hsb.b;
+            r = p;
+            g = q;
+            b = this._hsb.b;
             break;
         case 4:
-            r = t; g = p; b = this._hsb.b;
+            r = t;
+            g = p;
+            b = this._hsb.b;
             break;
         case 5:
-            r = this._hsb.b; g = p; b = q;
+            r = this._hsb.b;
+            g = p;
+            b = q;
             break;
     }
     this._rgb = {};
@@ -407,27 +483,45 @@ mire.colorHSB.prototype._toHSL = function() {
     //TOOD
 };
 
+mire.colorHSB.prototype._toCMY = function() {
+    //TOOD
+};
+
 mire.colorHSB.prototype = new mire.color();
 mire.colorHSB.prototype.constructor = mire.colorHSB;
 
 /**
- * [colorCMYK description]
+ * [0-1] range
  *
  * @param {[type]} cyan    [description]
  * @param {[type]} magenta [description]
  * @param {[type]} yellow  [description]
- * @param {[type]} key     =black
  * @return {[type]} [description]
  */
-mire.colorCMYK = function(cyan, magenta, yellow, key) {
+mire.colorCMY = function(cyan, magenta, yellow) {
     mire.color.call(this);
-    this._cmyk.c = 100;
-    this._cmyk.m = 100;
-    this._cmyk.y = 100;
-    this._cmyk.k = 100;
+    this._cmy = {};
+    this._cmy.c = cyan;
+    this._cmy.m = magenta;
+    this._cmy.y = yellow;
 };
 
-mire.colorCMYK.prototype = new mire.color();
+mire.colorCMY.prototype = new mire.color();
+mire.colorCMY.prototype.constructor = mire.colorCMY;
+
+mire.colorCMY.prototype._toRGB = function() {
+    this._rgb = {};
+    this._rgb.r = 255 - this._cmy.c;
+    this._rgb.g = 255 - this._cmy.m;
+    this._rgb.b = 255 - this._cmy.y;
+};
+
+mire.colorCMYK = function(cyan, magenta, yellow, black) {
+    mire.colorCMY.call(this);
+    this._k = black;
+};
+
+mire.colorCMYK.prototype = new mire.colorCMY(0, 0, 0);
 mire.colorCMYK.prototype.constructor = mire.colorCMYK;
 
 // mire.colorLambda = function(lambda) {
