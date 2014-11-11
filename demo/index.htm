@@ -20,28 +20,114 @@
     <script src="../mire.js"></script>
 
     <script>
+        $(document).ready(function(){
+            var arrayColors = {};
+            arrayColors.hexColor = new mire.colorHEX('ff0000');
+            arrayColors.hexColor2 = new mire.colorHEX(0xffff00);
+            arrayColors.RGBAColor = new mire.colorRGBA(255, 0, 0, 0.37);
+            arrayColors.RGBColor = new mire.colorRGB(0, 255, 0);
 
-        var hexRed = new mire.colorHEX('ff0000');
-        var hexGreen = new mire.colorHEX(0x00ff00);
-        var rgbaRed = new mire.colorRGBA(255, 0, 0, 0);
-        var rgbGreen = new mire.colorRGB(0, 255, 0);
-        var nameRed = new mire.colorName('red');
+            var debugColors = '';
+            var tmpColor;
+            for(var color in arrayColors){
+                tmpColor = arrayColors[color];
+                debugColors += '<table>';
 
- rgbaRed._toHSL();
+                debugColors += '<tr>';
+                debugColors += '<td><h3>Type</h3></td>';
+                debugColors += '<td><h3>Value</h3></td>';
+                debugColors += '<td><h3>Result</h3></td>';
+                debugColors += '</tr>';
 
-        // console.log('hexRed', hexRed.getVerbose(), hexRed.getComplementary(), this);
-        console.log('hexGreen', hexGreen.getVerbose());
-        console.log('rgbaRed', rgbaRed.getVerbose(), rgbaRed, rgbaRed.getComplementary());
-        console.log('rgbGreen', rgbGreen.getVerbose());
-        console.log('nameRed', nameRed.getVerbose());
+                debugColors += '<tr>';
+                debugColors += '<td class="title">Color</td>';
+                debugColors += '<td>' + color + '(' + tmpColor.getVerbose() + ')</td>';
+                debugColors += '<td style="background-color:' + tmpColor.getVerbose() + '"></td>';
+                debugColors += '</tr>';
 
+                debugColors += '<tr>';
+                debugColors += '<td class="title">getHex</td>';
+                debugColors += '<td>' + tmpColor.getHEX().getVerbose() + '</td>';
+                debugColors += '<td style="background-color:' + tmpColor.getHEX().getVerbose() + '"></td>';
+                debugColors += '</tr>';
+
+                debugColors += '<tr>';
+                debugColors += '<td class="title">getRGB</td>';
+                debugColors += '<td>' + tmpColor.getRGB().getVerbose() + '</td>';
+                debugColors += '<td style="background-color:' + tmpColor.getRGB().getVerbose() + '"></td>';
+                debugColors += '</tr>';
+
+                debugColors += '<tr>';
+                debugColors += '<td class="title">getRGBA</td>';
+                debugColors += '<td>' + tmpColor.getRGBA().getVerbose() + '</td>';
+                debugColors += '<td style="background-color:' + tmpColor.getRGBA().getVerbose() + '"></td>';
+                debugColors += '</tr>';
+
+                debugColors += '<tr>';
+                debugColors += '<td class="title">getHSL</td>';
+                debugColors += '<td>' + tmpColor.getHSL().getVerbose() + '</td>';
+                debugColors += '<td style="background-color:' + tmpColor.getHSL().getVerbose() + '"></td>';
+                debugColors += '</tr>';
+
+                debugColors += '<tr>';
+                debugColors += '<td class="title">getHSLA</td>';
+                debugColors += '<td>' + tmpColor.getHSLA().getVerbose() + '</td>';
+                debugColors += '<td style="background-color:' + tmpColor.getHSLA().getVerbose() + '"></td>';
+                debugColors += '</tr>';
+
+                // debugColors += '<tr>';
+                // debugColors += '<td class="title">getHSB</td>';
+                // debugColors += '<td>' + tmpColor.getHSB().getVerbose() + '</td>';
+                // debugColors += '<td style="background-color:' + tmpColor.getHSB().getVerbose() + '"></td>';
+                // debugColors += '</tr>';
+
+
+                // debugColors += '<tr>';
+                // debugColors += '<td class="title">getCMYK</td>';
+                // debugColors += '<td>' + tmpColor.getCMYK().getVerbose() + '</td>';
+                // debugColors += '<td style="background-color:' + tmpColor.getCMYK().getVerbose() + '"></td>';
+                // debugColors += '</tr>';
+
+                // debugColors += '<tr>';
+                // debugColors += '<td class="title">getCMY</td>';
+                // debugColors += '<td>' + tmpColor.getCMY().getVerbose() + '</td>';
+                // debugColors += '<td style="background-color:' + tmpColor.getCMY().getVerbose() + '"></td>';
+                // debugColors += '</tr>';
+
+                debugColors += '<tr>';
+                debugColors += '<td class="title">getComplementary</td>';
+                debugColors += '<td>' + tmpColor.getComplementary().getVerbose() + '</td>';
+                debugColors += '<td style="background-color:' + tmpColor.getComplementary().getVerbose() + '"></td>';
+                debugColors += '</tr>';
+
+                debugColors += '<tr>';
+                debugColors += '<td class="title">getDeterminist</td>';
+                debugColors += '<td colspan="2">' + tmpColor.getDeterminist() + '</td>';
+                debugColors += '</tr>';
+
+                debugColors += '</table>';
+                debugColors += '<hr />';
+            }
+
+            $('#debugColors').html(debugColors);
+        });
     </script>
+
+    <style>
+        table, td, tr{
+            border:1px solid gray;
+        }
+        table td.title{
+            font-weight: bold;
+        }
+    </style>
 
   </head>
 
   <body>
   
-    (get a look to the console...)  
+    <h2>Debug Colors</h2>
+    <div id="debugColors"></div> 
 
   </body>
 </html>

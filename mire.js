@@ -1,5 +1,9 @@
 var mire = {};
 
+///////////
+// Utils //
+///////////
+
 //leftpad
 if (typeof String.prototype.padLeft != 'function') {
     String.prototype.padLeft = function(length, padChar) {
@@ -45,7 +49,14 @@ mire._HUEToRGB = function(p, q, t) {
     return p;
 };
 
+//////////////////////////////////////////////
+
+/////////////////////
+// Prototype color //
+/////////////////////
+
 mire.color = function(opacity) {
+    this._synthesis = true; //true = additive, false = soustractive
     this._hex = undefined;
     this._name = undefined;
     this._lambda = undefined;
@@ -54,8 +65,23 @@ mire.color = function(opacity) {
     this._hsl = undefined;
     this._hsb = undefined;
     this._cmy = undefined;
-    this._k = undefined;
+    this._k = undefined; //useless?
     this._alpha = (typeof opacity == 'undefined') ? 1 : opacity;
+};
+
+mire.color.prototype._toHEX = function() {
+    if (this._rgb === undefined) {
+        this._toRGB();
+    }
+    //convert to hexadecimal representation
+    var red = '' + this._rgb.r.toString(16);
+    var green = '' + this._rgb.g.toString(16);
+    var blue = '' + this._rgb.b.toString(16);
+    //get results with 2 digits (except if allowCombine == true and result combinable on 3 digit instead of 6)
+    red = red.padLeft(2, '0');
+    green = green.padLeft(2, '0');
+    blue = blue.padLeft(2, '0');
+    this._hex = '' + red + green + blue;
 };
 
 mire.color.prototype.getHEX = function() {
@@ -69,7 +95,7 @@ mire.color.prototype.getRGB = function() {
     if (this._rgb === undefined) {
         this._toRGB();
     }
-    return new mire.colorRGB(this._rgb.r, this._rgb.g, this._rgb.g);
+    return new mire.colorRGB(this._rgb.r, this._rgb.g, this._rgb.b);
 };
 
 mire.color.prototype.getRGBA = function(opacity) {
@@ -79,7 +105,7 @@ mire.color.prototype.getRGBA = function(opacity) {
     if (typeof opacity != 'number') {
         opacity = (this._alpha === undefined) ? 1 : this._alpha;
     }
-    return new mire.colorRGB(this._rgb.r, this._rgb.g, this._rgb.b, opacity);
+    return new mire.colorRGBA(this._rgb.r, this._rgb.g, this._rgb.b, opacity);
 };
 
 mire.color.prototype.getHSL = function() {
@@ -93,7 +119,7 @@ mire.color.prototype.getHSLA = function(opacity) {
     if (this._hsl === undefined) {
         this._toHSL();
     }
-    if (typeof opacity != number) {
+    if (typeof opacity != 'number') {
         opacity = (this._alpha === undefined) ? 1 : this._alpha;
     }
     return new mire.colorHSLA(this._hsl.h, this._hsl.s, this._hsl.l, opacity);
@@ -114,7 +140,7 @@ mire.color.prototype.getCMY = function() {
 };
 
 /**
- * attention avertir l'utilisateur qu'il s'agit d'une approx grossière (il faut ce baser sur des fichiers icc)
+ * attention avertir l'utilisateur qu'il s'agit d'une approx grossière (il faut se baser sur des fichiers icc)
  *
  * @return {[type]} [description]
  */
@@ -122,10 +148,10 @@ mire.color.prototype.getCMYK = function() {
     if (this._cmy === undefined) {
         this._toCMY();
     }
-    var k = (this._k === undefined) ? Math.max(c, m, y) : this._k;
-    c = c - k;
-    m = m - k;
-    y = y - k;
+    var k = (this._k === undefined) ? Math.max(this._cmy.c, this._cmy.m, this._cmy.y) : this._k;
+    var c = this._cmy.c - k;
+    var m = this._cmy.m - k;
+    var y = this._cmy.y - k;
     return new mire.colorCMYK(c, m, y, k);
 };
 
@@ -150,30 +176,6 @@ mire.color.prototype._hardTypedResult = function(context, color) {
     return undefined;
 };
 
-mire.color.prototype.getComplementary = function() {
-    if (this._hsl === undefined) {
-        this._toHSL;
-    }
-    var h = Math.abs(this._hsl.h - 360);
-    var complementary = new mire.colorHSLA(h, this._hsl.s, this._hsl.l, this._alpha);
-    return this._hardTypedResult(this, complementary);
-};
-
-mire.color.prototype._toHEX = function() {
-    if (this._rgb === undefined) {
-        this._toRGB();
-    }
-    //convert to hexadecimal representation
-    var red = '' + this._rgb.r.toString(16);
-    var green = '' + this._rgb.g.toString(16);
-    var blue = '' + this._rgb.b.toString(16);
-    //get results with 2 digits (except if allowCombine == true and result combinable on 3 digit instead of 6)
-    red = red.padLeft(2, '0');
-    green = green.padLeft(2, '0');
-    blue = blue.padLeft(2, '0');
-    this._hex = '' + red + green + blue;
-};
-
 mire.color.prototype.getDeterminist = function() {
     if (this._hex === undefined) {
         this._toHEX();
@@ -186,6 +188,39 @@ mire.color.prototype.getDeterminist = function() {
     }
     return '' + alpha + this._hex;
 };
+
+/**
+ * Get the complementary (= opposite) color of the current one.
+ * (Based on RGB system, +/- = light system).
+ *
+ * @return {mire.color} The complementary color (the type of the color will be the same that the current one).
+ */
+mire.color.prototype.getComplementary = function() {
+    if (this._hsl === undefined) {
+        this._toHSL;
+    }
+    var h = Math.abs(0.5 + this._hsl.h);
+    if (h > 360) {
+        h -= 360;
+    }
+    h.toFixed(2)
+    var complementary = new mire.colorHSLA(h, this._hsl.s, this._hsl.l, this._alpha);
+    return this._hardTypedResult(this, complementary);
+};
+
+//va dépendre du référentiel, s'il est basé sur des lights ou des pygments (genre R+V+B en additif = blanc, en soustractif = noir)
+mire.color.prototype.add = function(color) {
+    return undefined;
+};
+
+//idem
+mire.color.prototype.substract = function(color) {
+    return undefined;
+};
+
+/////////////////////////
+// Prototype colorRGBA //
+/////////////////////////
 
 mire.colorRGBA = function(red, green, blue, opacity) {
     mire.color.call(this, opacity);
@@ -277,6 +312,10 @@ mire.colorRGBA.prototype._toHSB = function() {
     this._hsb.b = v;
 };
 
+////////////////////////
+// Prototype colorRGB //
+////////////////////////
+
 mire.colorRGB = function(red, green, blue) {
     mire.color.call(this);
     this._rgb = {};
@@ -291,6 +330,10 @@ mire.colorRGB.prototype.constructor = mire.colorRGB;
 mire.colorRGB.prototype.getVerbose = function(useExtraSpaces, usePercentage) {
     return mire._getVerboseRGBRGBA(this._rgb.r, this._rgb.g, this._rgb.b, this._alpha, true, useExtraSpaces, usePercentage);
 };
+
+////////////////////////
+// Prototype colorHex //
+////////////////////////
 
 mire.colorHEX = function(hex) {
     mire.color.call(this);
@@ -358,6 +401,10 @@ mire.colorHEX.prototype.getVerbose = function(upperCase, allowCombine) {
     return '#' + red + green + blue;
 };
 
+/////////////////////////
+// Prototype colorName //
+/////////////////////////
+
 mire.colorName = function(name) {
     if (mire.colors[name] === undefined) {
         throw 'Unknown color ' + name + '.';
@@ -371,6 +418,10 @@ mire.colorName = function(name) {
 
 mire.colorName.prototype = new mire.colorHEX(0);
 mire.colorName.prototype.constructor = mire.colorName;
+
+/////////////////////////
+// Prototype colorHSLA //
+/////////////////////////
 
 mire.colorHSLA = function(hue, saturation, lightness, opacity) {
     mire.color.call(this, opacity);
@@ -410,6 +461,14 @@ mire.colorHSLA.prototype._toCMY = function() {
     //TODO
 };
 
+mire.colorHSLA.prototype.getVerbose = function() {
+    return 'hsla(' + (this._hsl.h * 360) + ', ' + (this._hsl.s * 100) + '%, ' + (this._hsl.l * 100) + '%, ' + this._alpha + ');';
+};
+
+////////////////////////
+// Prototype colorHSL //
+////////////////////////
+
 mire.colorHSL = function(hue, saturation, lightness) {
     mire.color.call(this);
     this._hsl = {};
@@ -422,16 +481,19 @@ mire.colorHSL.prototype = new mire.colorHSLA();
 mire.colorHSL.prototype.constructor = mire.colorHSL;
 
 mire.colorHSL.prototype.getVerbose = function() {
-    //TODO passer la valeur en angles + pourcentages pour sortir la notation css != des calculs
+    return 'hsl(' + (this._hsl.h * 360) + ', ' + (this._hsl.s * 100) + '%, ' + (this._hsl.l * 100) + '%);';
 };
 
-// = HSV
+///////////////////////////////
+// Prototype colorHSB (=HSV) //
+///////////////////////////////
+
 mire.colorHSB = function(hue, saturation, brightness) {
     mire.color.call(this);
     this._hsl = {};
     this._hsl.h = hue;
     this._hsl.s = saturation;
-    this._hsl.l = lightness;
+    this._hsl.l = brightness;
 };
 
 mire.colorHSB.prototype._toRGB = function() {
@@ -490,6 +552,10 @@ mire.colorHSB.prototype._toCMY = function() {
 mire.colorHSB.prototype = new mire.color();
 mire.colorHSB.prototype.constructor = mire.colorHSB;
 
+////////////////////////
+// Prototype colorCMY //
+////////////////////////
+
 /**
  * [0-1] range
  *
@@ -524,13 +590,29 @@ mire.colorCMYK = function(cyan, magenta, yellow, black) {
 mire.colorCMYK.prototype = new mire.colorCMY(0, 0, 0);
 mire.colorCMYK.prototype.constructor = mire.colorCMYK;
 
+///////////////////////////
+// Prototype colorLambda //
+///////////////////////////
+
 // mire.colorLambda = function(lambda) {
 //     this.lambda = lambda;
 // };
 
+///////////////////////////
+// Prototype colorCIEXYZ //
+///////////////////////////
+
 // mire.colorCIEXYZ = function(xyz) {};
 
+///////////////////////////
+// Prototype colorCIELAB //
+///////////////////////////
+
 // mire.colorCIELAB = function(lab) {};
+
+//////////////////////////////////////////////
+
+mire.palette = function() {};
 
 mire.gradient = function() {};
 
